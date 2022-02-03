@@ -7,7 +7,7 @@ typedef struct {
   // TODO: add fields
   uint64_t w;
   uint64_t f;
-  uint8_t tag;
+  enum tag{negative, overflow_neg, overflow_pos, underflow_neg, underflow_pos, valid, err}; 
   
 } Fixedpoint;
 

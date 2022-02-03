@@ -9,26 +9,19 @@
 static Fixedpoint DUMMY;
 
 Fixedpoint fixedpoint_create(uint64_t whole) {
-  // TODO: implement
-  //assert(0);
-  //return DUMMY;
-
- Fixedpoint fp;
- fp.w = whole;
- fp.f = 0;
- return fp;
-
+  Fixedpoint fp;
+  fp.w = whole;
+  fp.f = 0;
+  Tag t = valid;
+  return fp;
 }
 
 Fixedpoint fixedpoint_create2(uint64_t whole, uint64_t frac) {
-  // TODO: implement
-  //assert(0);
-  //return DUMMY;
-
   Fixedpoint fp;
- fp.w = whole;
- fp.f = frac;
- return fp;
+  fp.w = whole;
+  fp.f = frac;
+  Tag t = valid;
+  return fp;
 }
 
 Fixedpoint fixedpoint_create_from_hex(const char *hex) {
@@ -38,25 +31,17 @@ Fixedpoint fixedpoint_create_from_hex(const char *hex) {
 }
 
 uint64_t fixedpoint_whole_part(Fixedpoint val) {
-  // TODO: implement
-  //assert(0);
-  //return 0UL;
-
   return val.w;
 }
 
 uint64_t fixedpoint_frac_part(Fixedpoint val) {
-  // TODO: implement
-  //assert(0);
-  //return 0UL;
-
   return val.f;
 }
 
 Fixedpoint fixedpoint_add(Fixedpoint left, Fixedpoint right) {
-  // TODO: implement
-  assert(0);
-  return DUMMY;
+  Fixedpoint whole_sum = left.w + right.w;
+  Fixedpoint frac_sum = left.f + right.f;
+  Fixedpoint sum = fixedpoint_create2(whole_sum, frac_sum);
 }
 
 Fixedpoint fixedpoint_sub(Fixedpoint left, Fixedpoint right) {
@@ -66,21 +51,20 @@ Fixedpoint fixedpoint_sub(Fixedpoint left, Fixedpoint right) {
 }
 
 Fixedpoint fixedpoint_negate(Fixedpoint val) {
-  // TODO: implement
-  assert(0);
-  return DUMMY;
+  val.t = negative;
+  return val;
 }
 
 Fixedpoint fixedpoint_halve(Fixedpoint val) {
-  // TODO: implement
-  assert(0);
-  return DUMMY;
+  val = val >> 1;
+  return val;
+  //have to check for underflow 
 }
 
 Fixedpoint fixedpoint_double(Fixedpoint val) {
-  // TODO: implement
-  assert(0);
-  return DUMMY;
+  val = val << 1;
+  return val;
+  //have to check for overflow 
 }
 
 int fixedpoint_compare(Fixedpoint left, Fixedpoint right) {
@@ -90,16 +74,11 @@ int fixedpoint_compare(Fixedpoint left, Fixedpoint right) {
 }
 
 int fixedpoint_is_zero(Fixedpoint val) {
-  // TODO: implement
-  //assert(0);
-  //return 0;
-
-  if ((val.w == 0) && (val.f==0)) {
+  if ((val.w == 0) && (val.f == 0)) {
     return 1;
   } else {
     return 0;
   }
-
 }
 
 int fixedpoint_is_err(Fixedpoint val) {
@@ -109,38 +88,44 @@ int fixedpoint_is_err(Fixedpoint val) {
 }
 
 int fixedpoint_is_neg(Fixedpoint val) {
-  // TODO: implement
-  assert(0);
+  if (val.t == negative) {
+    return 1;
+  }
   return 0;
 }
 
 int fixedpoint_is_overflow_neg(Fixedpoint val) {
-  // TODO: implement
-  assert(0);
+  if (val.t == overflow_neg) {
+    return 1;
+  }
   return 0;
 }
 
 int fixedpoint_is_overflow_pos(Fixedpoint val) {
-  // TODO: implement
-  assert(0);
+  if (val.t == overflow_pos) {
+    return 1;
+  }
   return 0;
 }
 
 int fixedpoint_is_underflow_neg(Fixedpoint val) {
-  // TODO: implement
-  assert(0);
+  if (val.t == underflow_neg) {
+    return 1;
+  }
   return 0;
 }
 
 int fixedpoint_is_underflow_pos(Fixedpoint val) {
-  // TODO: implement
-  assert(0);
+  if (val.t == underflow_pos) {
+    return 1;
+  }
   return 0;
 }
 
 int fixedpoint_is_valid(Fixedpoint val) {
-  // TODO: implement
-  assert(0);
+  if (val.t == valid) {
+    return 1;
+  }
   return 0;
 }
 
