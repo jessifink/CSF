@@ -45,8 +45,9 @@ Fixedpoint fixedpoint_add(Fixedpoint left, Fixedpoint right) {
 }
 
 Fixedpoint fixedpoint_sub(Fixedpoint left, Fixedpoint right) {
-  // TODO: implement
-  assert(0);
+  Fixedpoint whole_sum = left.w - right.w;
+  Fixedpoint frac_sum = left.f - right.f;
+  Fixedpoint sum = fixedpoint_create2(whole_sum, frac_sum);
   return DUMMY;
 }
 
@@ -136,3 +137,10 @@ char *fixedpoint_format_as_hex(Fixedpoint val) {
   strcpy(s, "<invalid>");
   return s;
 }
+
+//overflow pos - add two numbers carry the one 
+// two big numbers add together too big to be able tofit in spot cuts off number is stored is smaller than the two numbers that you added together 
+//overflow negative - is just adding negaative numbers become overally negative 
+//underflow  pos - if you have something in the least significatn bit spot and divide by two its going to get shifted out of existence   
+// bit masking take two bit numbers if you and it with a 1 -- 100101101 &  1 if both that 0 in any other case 
+//underflow neg - same thing but with negative numbers 
