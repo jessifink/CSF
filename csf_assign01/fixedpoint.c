@@ -42,13 +42,29 @@ Fixedpoint fixedpoint_add(Fixedpoint left, Fixedpoint right) {
   Fixedpoint whole_sum = left.w + right.w;
   Fixedpoint frac_sum = left.f + right.f;
   Fixedpoint sum = fixedpoint_create2(whole_sum, frac_sum);
+  //if I understood correctly I think this is right 
+   if (sum < left || sum < right) {
+     if (left > 0 && right > 0) {
+       sum.t = overflow_pos;
+     } else if (left < 0 && right < 0) {
+       sum.t = overflow_neg;
+     } else if (left < 0 && right > 0 && abs(right) > abs(left)) {
+       sum.t = overflow_pos
+     } else {
+       sum.t = overflow_neg;
+     }
+  }
+  return sum;
 }
 
 Fixedpoint fixedpoint_sub(Fixedpoint left, Fixedpoint right) {
   Fixedpoint whole_sum = left.w - right.w;
   Fixedpoint frac_sum = left.f - right.f;
   Fixedpoint sum = fixedpoint_create2(whole_sum, frac_sum);
-  return DUMMY;
+  if (sum > left || sum > right) {
+    //there is overflow 
+  }
+  return sum;
 }
 
 Fixedpoint fixedpoint_negate(Fixedpoint val) {
@@ -58,13 +74,23 @@ Fixedpoint fixedpoint_negate(Fixedpoint val) {
 
 Fixedpoint fixedpoint_halve(Fixedpoint val) {
   val = val >> 1;
+  if (val & 1 == 0) {// I think this is 0 but could be reversed 
+    if (val.t != negaative) { 
+      val.t = underflow_neg;
+    } else {
+      val.t = underflow_pos;
+    }
+  }
   return val;
   //have to check for underflow 
 }
 
 Fixedpoint fixedpoint_double(Fixedpoint val) {
-  val = val << 1;
-  return val;
+  Fixedpoint val_doubled = val << 1;
+  if (val_doubled < val) {
+    val_doubled.t = overflow_pos;
+  }
+  return val_doubled;
   //have to check for overflow 
 }
 
