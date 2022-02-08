@@ -196,6 +196,39 @@ void test_add(TestObjs *objs) {
   ASSERT(fixedpoint_is_neg(sum));
   ASSERT(0xc7252a0c31d8eUL == fixedpoint_whole_part(sum));
   ASSERT(0x5be47e8ea0538c50UL == fixedpoint_frac_part(sum));
+
+  lhs = fixedpoint_create_from_hex("8bd.0e34492025065");
+  rhs = fixedpoint_create_from_hex("5d7b061d6.034f5d");
+  sum = fixedpoint_add(lhs, rhs);
+  ASSERT(!fixedpoint_is_neg(sum));
+  ASSERT(0x5d7b06a93UL == fixedpoint_whole_part(sum));
+  ASSERT(0x1183a62025065000UL == fixedpoint_frac_part(sum));
+  
+  lhs = fixedpoint_create_from_hex("-8a6a9f92d72.82a9b99ad4e76");
+  rhs = fixedpoint_create_from_hex("-8a93a62c25996.e09875");
+  sum = fixedpoint_add(lhs, rhs);
+  ASSERT(fixedpoint_is_neg(sum));
+  ASSERT(0x8b1e10cbb8709UL == fixedpoint_whole_part(sum));
+  ASSERT(0x63422e9ad4e76000UL == fixedpoint_frac_part(sum));
+
+  lhs = objs->large1;
+  rhs = objs->large2;
+  sum = fixedpoint_add(lhs, rhs);
+  ASSERT(fixedpoint_is_overflow_pos(sum));
+
+  lhs = objs->large1;
+  lhs.t = negative;
+  rhs = objs->large2;
+  rhs.t = negative;
+  sum = fixedpoint_add(lhs, rhs);
+  ASSERT(fixedpoint_is_overflow_neg(sum));
+
+  lhs = objs->zero;
+  rhs = objs->zero;
+  sum = fixedpoint_add(lhs, rhs);
+  ASSERT(fixedpoint_is_zero(sum));
+  ASSERT(fixedpoint_is_valid(sum));
+
 }
 
 void test_sub(TestObjs *objs) {
@@ -209,6 +242,22 @@ void test_sub(TestObjs *objs) {
   ASSERT(fixedpoint_is_neg(diff));
   ASSERT(0xccf35aa496c124UL == fixedpoint_whole_part(diff));
   ASSERT(0x0905000000000000UL == fixedpoint_frac_part(diff));
+
+  lhs = fixedpoint_create_from_hex("-126a0b9b1f810.201cfa1");
+  rhs = fixedpoint_create_from_hex("-7480fe1b4.07a5");
+  diff = fixedpoint_sub(lhs, rhs);
+  ASSERT(fixedpoint_is_neg(diff));
+  ASSERT(0x1269971a2165cUL == fixedpoint_whole_part(diff));
+  ASSERT(0x1877fa1UL == fixedpoint_frac_part(diff));
+  
+  lhs = fixedpoint_create_from_hex("16fbf0ce.977a8");
+  rhs = fixedpoint_create_from_hex("18f08d605.105c9b0f3fc9950");
+  diff = fixedpoint_sub(lhs, rhs);
+  ASSERT(fixedpoint_is_neg(diff));
+  ASSERT(0x1780ce536UL == fixedpoint_whole_part(diff));
+  
+
+
 }
 
 void test_is_overflow_pos(TestObjs *objs) {
@@ -265,3 +314,4 @@ void test_is_zero(TestObjs *objs) {
   ASSERT(fixedpoint_is_zero(z));
 }
 // TODO: implement more test functions
+
