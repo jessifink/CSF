@@ -21,6 +21,7 @@ TestObjs *setup(void);
 void cleanup(TestObjs *objs);
 
 // test functions
+void test_compare(TestObjs *objs);
 void test_whole_part(TestObjs *objs);
 void test_frac_part(TestObjs *objs);
 void test_create_from_hex(TestObjs *objs);
@@ -43,6 +44,7 @@ int main(int argc, char **argv) {
   TEST_INIT();
 
   TEST(test_whole_part);
+  TEST(test_compare);
   TEST(test_frac_part);
   TEST(test_create_from_hex);
   TEST(test_format_as_hex);
@@ -92,6 +94,16 @@ void test_whole_part(TestObjs *objs) {
   ASSERT(0UL == fixedpoint_whole_part(objs->one_fourth));
   ASSERT(0x4b19efceaUL == fixedpoint_whole_part(objs->large1));
   ASSERT(0xfcbf3d5UL == fixedpoint_whole_part(objs->large2));
+}
+
+void test_compare(TestObjs *objs) {
+  Fixedpoint one_neg = fixedpoint_negate(objs->one);
+  ASSERT(fixedpoint_compare(objs->one,one_neg) == 1);
+  ASSERT(fixedpoint_compare(one_neg,objs->one) == -1);
+  ASSERT(fixedpoint_compare(objs->one_fourth, objs->one_half) == -1);
+  ASSERT(fixedpoint_compare(objs->one_half, objs->one_fourth) == 1);
+  ASSERT(fixedpoint_compare(objs->one_half, objs->one_half) == 0);
+  
 }
 
 void test_frac_part(TestObjs *objs) {
@@ -187,7 +199,8 @@ void test_negate(TestObjs *objs) {
 
 void test_add(TestObjs *objs) {
   (void) objs;
-
+  sum = fixedpoint_add(objs->one, objs->one);
+  ASSERT(sum == 2UL);
   Fixedpoint lhs, rhs, sum;
 
   lhs = fixedpoint_create_from_hex("-c7252a193ae07.7a51de9ea0538c5");
