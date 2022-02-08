@@ -28,6 +28,11 @@ Fixedpoint fixedpoint_create_from_hex(const char *hex) {
   Fixedpoint fp;
   size_t len = strlen(hex);
 
+  if (len == 0) {
+    fp.t = err;
+    return fp;
+  }
+
   char sign = hex[0];
   int index = 0;
   if (sign == '-') {
@@ -35,24 +40,27 @@ Fixedpoint fixedpoint_create_from_hex(const char *hex) {
     index++;
   }
   char c = hex[index];
-  char * whole = "";
+  char * whole = "0000000000000000";
   int w_index = 0;
-  while (c != '.') {
+  while (c != '.' && (index < len)) {
     whole[w_index] = c;
     w_index++;
     c = hex[index++];
   }
+  whole[w_index] = '\0';
 
   uint64_t whole_p = (uint64_t) (strtoul(whole, NULL, 16));
 
   index++;
-  char * frac = "";
+  char * frac = "0000000000000000";
   int f_index = 0;
   while (index < len) {
     frac[f_index] = c;
     f_index++;
     c = hex[index++];
   }
+  whole[f_index] = '\0';
+  
   uint64_t frac_p = (uint64_t) (strtoul(frac, NULL, 16));
   size_t f_len = strlen(frac_p);
   size_t w_len = strlen(whole_p);
