@@ -118,13 +118,36 @@ void test_frac_part(TestObjs *objs) {
 void test_create_from_hex(TestObjs *objs) {
   (void) objs;
 
+  Fixedpoint v = fixedpoint_create_from_hex("0");
+  ASSERT(0UL == fixedpoint_whole_part(v));
+  ASSERT(0UL == fixedpoint_frac_part(v));
+
+  Fixedpoint v2 = fixedpoint_create_from_hex("0.0");
+  ASSERT(0UL == fixedpoint_whole_part(v2));
+  ASSERT(0UL == fixedpoint_frac_part(v2));
+
+  Fixedpoint v3 = fixedpoint_create_from_hex("1");
+  ASSERT(1UL == fixedpoint_whole_part(v3));
+  ASSERT(0UL == fixedpoint_frac_part(v3));
+  
+  Fixedpoint v6 = fixedpoint_create_from_hex("-1");
+  ASSERT(1UL == fixedpoint_whole_part(v6));
+  ASSERT(0UL == fixedpoint_frac_part(v6));
+  ASSERT(fixedpoint_is_neg(v6));
+
+  Fixedpoint v5 = fixedpoint_create_from_hex("a");
+  ASSERT(0xaUL == fixedpoint_whole_part(v5));
+  ASSERT(0UL == fixedpoint_frac_part(v5));
+
+  Fixedpoint v4 = fixedpoint_create_from_hex("1.0");
+  ASSERT(0UL == fixedpoint_frac_part(v4));
+  ASSERT(1UL == fixedpoint_whole_part(v4));
+
   Fixedpoint val1 = fixedpoint_create_from_hex("f6a5865.00f2");
-
   ASSERT(fixedpoint_is_valid(val1));
-
   ASSERT(0xf6a5865UL == fixedpoint_whole_part(val1));
-
   ASSERT(0x00f2000000000000UL == fixedpoint_frac_part(val1));
+
 }
 
 void test_format_as_hex(TestObjs *objs) {
@@ -199,9 +222,9 @@ void test_negate(TestObjs *objs) {
 
 void test_add(TestObjs *objs) {
   (void) objs;
-  sum = fixedpoint_add(objs->one, objs->one);
-  ASSERT(sum == 2UL);
-  Fixedpoint lhs, rhs, sum;
+  Fixedpoint sum = fixedpoint_add(objs->one, objs->one);
+  ASSERT(2UL == fixedpoint_whole_part(sum));
+  Fixedpoint lhs, rhs;
 
   lhs = fixedpoint_create_from_hex("-c7252a193ae07.7a51de9ea0538c5");
   rhs = fixedpoint_create_from_hex("d09079.1e6d601");

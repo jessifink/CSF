@@ -43,11 +43,11 @@ Fixedpoint fixedpoint_create_from_hex(const char *hex) {
     w_index++;
     c = hex[index++];
   }
-  whole[w_index] = '\0';
+  //whole[w_index++] = '\0';
   uint64_t whole_p = (uint64_t) (strtoul(whole, NULL, 16));
   index++;
   int f_index = 0;
-  uint64_t frac_p;
+  uint64_t frac_p = 0;
   size_t f_len = 0;
   if (index < (int) len) {
     char frac[16] = "";
@@ -66,14 +66,18 @@ Fixedpoint fixedpoint_create_from_hex(const char *hex) {
   w_len = w_index + 1;
   if (sizeof(w_len) > 16|| sizeof(f_len) > 16) {
     fp.t = err;
-    fp = fixedpoint_create2(0,0);
+    fp.w = 0;
+    fp.f = 0;
+    return fp;
+    //fp = fixedpoint_create2(0,0);
     //return a Fixedpoint value for which a fixedpoint_is_err returns true
   }
   //whole_p = whole_p >> ((16 - w_len) * 4);
   fp.w = whole_p;
   fp.f = frac_p;
   if (frac_p == '\0') {
-    return fixedpoint_create(fp.w); 
+    return fp;
+    //return fixedpoint_create(fp.w); 
   }
   return fp;
 }
@@ -86,22 +90,22 @@ uint64_t fixedpoint_frac_part(Fixedpoint val) {
   return val.f;
 }
 
-private int compare_abs_value(Fixedpoint left, Fixedpoint right ) {
+int compare_abs_value(Fixedpoint left, Fixedpoint right ) {
   if (left.w > right.w) {
     return 1;
+  }
   else if (left.w < right.w) {
     return -1;
   } else {
       if (left.f < right.f) {
         return -1;
-      } else if {
-        if (left.f > right.w) {
+      } else if (left.f > right.w) {
           return 1;
-        }
-      } else {
+        } else {
         return 0;
       }
-}
+    }
+  }
 
 Fixedpoint fixedpoint_add(Fixedpoint left, Fixedpoint right) {
   Fixedpoint sum;
