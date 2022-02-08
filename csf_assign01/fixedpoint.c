@@ -27,12 +27,10 @@ Fixedpoint fixedpoint_create2(uint64_t whole, uint64_t frac) {
 Fixedpoint fixedpoint_create_from_hex(const char *hex) {
   Fixedpoint fp;
   size_t len = strlen(hex);
-
   if (len == 0) {
     fp.t = err;
     return fp;
   }
-
   char sign = hex[0];
   int index = 0;
   if (sign == '-') {
@@ -42,7 +40,7 @@ Fixedpoint fixedpoint_create_from_hex(const char *hex) {
   char c = hex[index];
   char * whole = "0000000000000000";
   int w_index = 0;
-  while (c != '.' && (index < len)) {
+  while (c != '.' && (index < (int)len)) {
     whole[w_index] = c;
     w_index++;
     c = hex[index++];
@@ -54,7 +52,7 @@ Fixedpoint fixedpoint_create_from_hex(const char *hex) {
   index++;
   char * frac = "0000000000000000";
   int f_index = 0;
-  while (index < len) {
+  while (index < (int) len) {
     frac[f_index] = c;
     f_index++;
     c = hex[index++];
@@ -62,12 +60,18 @@ Fixedpoint fixedpoint_create_from_hex(const char *hex) {
   whole[f_index] = '\0';
   
   uint64_t frac_p = (uint64_t) (strtoul(frac, NULL, 16));
-  size_t f_len = strlen(frac_p);
-  size_t w_len = strlen(whole_p);
-
-  frac_p = frac_p << (f_len * 4);
-  whole_p = whole_p << (w_len * 4);
-
+  // size_t f_len;
+  // size_t w_len;
+  // if (frac_p != 0 && whole_p != 0)  {
+  //   f_len = 
+  //   w_len = floor(log10(abs(whole_p))) + 1;
+  // } else {
+  //   f_len = 1;
+  //   w_len = 1;
+  // }
+  // frac_p = frac_p << (f_len * 4);
+  // whole_p = whole_p << (w_len * 4);
+// this was originally strlen but i dont think you can do that on unisigned longs 
   uint64_t f = (uint64_t) frac_p;
   uint64_t w = (uint64_t) whole_p;
   fp.w = w;
@@ -88,24 +92,20 @@ Fixedpoint fixedpoint_add(Fixedpoint left, Fixedpoint right) {
   uint64_t whole_sum = left.w + right.w;
   uint64_t frac_sum = left.f + right.f;
   Fixedpoint sum = fixedpoint_create2(whole_sum, frac_sum);
-  //if I understood correctly I think this is right 
-   if (whole_sum < left.w || whole_sum < right.w) {
-     if (left.t == negative && right.t == negative) {
-       sum.t = overflow_neg;
-     } else {
-       sum.t = overflow_pos;
-       }
-   }
-
-    if (frac_sum < left.f || frac_sum < right.f) {
-     if (left.t == negative && right.t == negative) {
-       sum.t = overflow_neg;
-     } else {
-       sum.t = overflow_pos;
-       }
-   }
-
-
+  if (whole_sum < left.w || whole_sum < right.w) {
+    if (left.t == negative && right.t == negative) {
+      sum.t = overflow_neg;
+    } else {
+        sum.t = overflow_pos;
+      }
+    }
+  if (frac_sum < left.f || frac_sum < right.f) {
+    if (left.t == negative && right.t == negative) {
+      sum.t = overflow_neg;
+    } else {
+        sum.t = overflow_pos;
+      }
+  }
   return sum;
 }
 
@@ -135,7 +135,7 @@ Fixedpoint fixedpoint_negate(Fixedpoint val) {
   }
   return val;
 }
-
+ 
 Fixedpoint fixedpoint_halve(Fixedpoint val) {
   val.w = val.w >> 1;
   val.f = val.f >> 1;
@@ -169,7 +169,7 @@ Fixedpoint fixedpoint_double(Fixedpoint val) {
 
   if (val.w < orig_w) {
     if (val.t == negative) {
-      val.t == overflow_neg;
+      val.t = overflow_neg;
     } else {
       val.t = overflow_pos;
     }
@@ -233,7 +233,7 @@ int fixedpoint_is_zero(Fixedpoint val) {
 int fixedpoint_is_err(Fixedpoint val) {
   if (sizeof(val.w) > 16 || sizeof(val.f) > 16) {
       val.t = err;
-      return 0;
+      return 1;
   }
   //invalid hex digit in both sides 
 
@@ -283,9 +283,8 @@ int fixedpoint_is_valid(Fixedpoint val) {
 }
 
 char *fixedpoint_format_as_hex(Fixedpoint val) {
-  // TODO: implement
-  assert(0);
   char *s = malloc(20);
   strcpy(s, "<invalid>");
+  //sprintf()
   return s;
 }
