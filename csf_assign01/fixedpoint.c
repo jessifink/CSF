@@ -31,7 +31,8 @@ Fixedpoint fixedpoint_create_from_hex(const char *hex) {
   char sign = hex[0];
   int index = 0;
   fp.t = valid_positive;
-  if (sign == '-') {
+  if (hex[0] == '-') {
+    printf("%s", "hello");
     fp.t = valid_negative;
     index++;
   }
@@ -39,7 +40,10 @@ Fixedpoint fixedpoint_create_from_hex(const char *hex) {
   char whole[16] = "";
   int w_index = 0;
   while (c != '.' && (index < (int)len)) {
-  
+    if (c != 'a' && c != 'A' && c != 'b' && c != 'B' &&c != 'c' && c != 'C' && c != 'd' && c != 'D' &&
+      c != 'e' && c != 'E' && c != 'f' && c != 'F' && !isdigit(c)) {
+    fp.t = err;
+  }
     whole[w_index] = c;
     w_index++;
     c = hex[++index];
@@ -55,29 +59,31 @@ Fixedpoint fixedpoint_create_from_hex(const char *hex) {
   if (index < (int) len) {
     char frac[16] = "";
     while (index < (int) len) {
+      if (c != 'a' && c != 'A' && c != 'b' && c != 'B' &&c != 'c' && c != 'C' && c != 'd' && c != 'D' &&
+      c != 'e' && c != 'E' && c != 'f' && c != 'F' && !isdigit(c)) {
+        fp.t = err;
+      }
       frac[f_index] = c;
       f_index++;
       c = hex[++index];
     }
   frac[f_index] = '\0'; //check length
-  printf("frac : %s \n", frac);
+  //printf("frac : %s \n", frac);
   frac_p = (uint64_t) (strtoul(frac, NULL, 16));
   f_len = strlen(frac);
   frac_p = frac_p << (64 - (f_len * 4));
   }
   size_t w_len = strlen(whole);
+  if (sizeof(w_len) > 16 || sizeof(f_len) > 16) {
+    fp.t = err;
+    //return a Fixedpoint value for which a fixedpoint_is_err returns true
+  } 
   //check if whole and fractional are valid hex string with helper function
   //is each character a number or abcdef (capital and lowercase)
   //strchr checks a given string for first ocurrence of a char. contains
   fp.w = whole_p;
   fp.f = frac_p;
-  if (sizeof(w_len) > 16 || sizeof(f_len) > 16) {
-    fp.t = err;
-    fp.w = 0;
-    fp.f = 0;
-    return fp;
-    //return a Fixedpoint value for which a fixedpoint_is_err returns true
-  } 
+  printf("%d",fp.t);
 
   // if (frac_p == '\0') {
   //   return fp;
@@ -85,6 +91,7 @@ Fixedpoint fixedpoint_create_from_hex(const char *hex) {
   // }
   return fp;
 }
+
 
 uint64_t fixedpoint_whole_part(Fixedpoint val) {
   return val.w;
@@ -141,7 +148,7 @@ int carry_frac(uint64_t l, uint64_t r){
 }
 
 int check_overflow(uint64_t val1, uint64_t val2, uint64_t orig) {
-  if (val1 < orig || val2 < orig) {
+  if (orig < val1 || orig < val2) {
     return 1;
   }
   return 0;
@@ -183,7 +190,7 @@ if ((fixedpoint_is_neg(left) == 0 && fixedpoint_is_neg(right) == 0) ||  (fixedpo
   if (check_overflow(left.w, right.w, whole_sum) == 1) {
     if (left.t == valid_positive) {
       sum.t = overflow_pos;
-    } else {
+    } else if (left.t == valid_negative) {
       sum.t = overflow_neg;
     }
   }
@@ -524,6 +531,10 @@ char *fixedpoint_format_as_hex(Fixedpoint val) {
 
   //1. check if negative and add neg sign
   //if no frac part, copy over data with sprintf. 
+
+  if (fixedpoint_is_neg(val) == 1) {
+    s[0] = '-';
+  }
   if (val.f == 0) {
     sprintf(s, "%lx", val.w);
     return s;
@@ -531,6 +542,14 @@ char *fixedpoint_format_as_hex(Fixedpoint val) {
     sprintf(s, "%lx.%016lx", val.w, val.f);
   }
 
+  //to trim trailing zeroes
+  size_t index = strlen(s) - 1;
+  char c = s[index];
+  while (s == '0') {
+    index--;
+  }
+  s[index] = '\0';
+  
   //to trim trailing zeroes, start at the end of the array.
   //while loop to step backwards starting from last digit until 0
   //if it is zero, set it to null character
