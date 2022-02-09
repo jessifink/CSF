@@ -33,7 +33,7 @@ Fixedpoint fixedpoint_create_from_hex(const char *hex) {
     return fp;
   }
 
-  //need to create a fixed point first 
+  //get first element in string negative if negative
   char sign = hex[0];
   int index = 0;
   fp.t = valid_positive;
@@ -41,6 +41,7 @@ Fixedpoint fixedpoint_create_from_hex(const char *hex) {
     fp.t = valid_negative;
     index++;
   }
+  //declare empty string and fill until reaches end of whole part checking for errors in string
   char c = hex[index];
   char whole[16];
   int w_index = 0;
@@ -48,16 +49,21 @@ Fixedpoint fixedpoint_create_from_hex(const char *hex) {
     if (c != 'a' && c != 'A' && c != 'b' && c != 'B' &&c != 'c' && c != 'C' && c != 'd' && c != 'D' &&
       c != 'e' && c != 'E' && c != 'f' && c != 'F' && !isdigit(c)) {
     fp.t = err;
-  }
+    }
     whole[w_index] = c;
     w_index++;
     c = hex[++index];
   } 
   whole[w_index] = '\0'; //check length
+
+  //convert string to unsigned long 
   uint64_t whole_p = (uint64_t) (strtoul(whole, NULL, 16));
-  //printf("whole : %s \n", whole);
+  
+  //skip decimal index
   index++;
   c = hex[index];
+
+  //declare empty string and fill until reaches end of frac part checking for errors in string
   int f_index = 0;
   uint64_t frac_p = 0;
   size_t f_len = 0;
@@ -74,28 +80,22 @@ Fixedpoint fixedpoint_create_from_hex(const char *hex) {
       c = hex[++index];
     }
     frac[f_index] = '\0'; //check length
-    //printf("frac : %s \n", frac);
     frac_p = (uint64_t) (strtoul(frac, NULL, 16));
     f_len = strlen(frac);
     frac_p = frac_p << (64 - (f_len * 4));
-    if (f_len >= 16) {
-      fp.t = err;
-  }
+    //error if string longer than 16 
+    // if (f_len > 16 || frac[16] != '\0') {
+    //   fp.t = err;
+    // }
   }
   size_t w_len = strlen(whole);
-  if (w_len >= 16 ) {
-    fp.t = err;
-    //return a Fixedpoint value for which a fixedpoint_is_err returns true
-  } 
-  //check if whole and fractional are valid hex string with helper function
-  //is each character a number or abcdef (capital and lowercase)
-  //strchr checks a given string for first ocurrence of a char. contains
+  //error if string longer than 16 
+  // if (w_len > 16 || whole[16] != '\0') {
+  //     fp.t = err;
+  //   }
+
   fp.w = whole_p;
   fp.f = frac_p;
-  // if (frac_p == '\0') {
-  //   return fp;
-  //   //return fixedpoint_create(fp.w); 
-  // }
   return fp;
 }
 
@@ -292,7 +292,6 @@ if ((fixedpoint_is_neg(left) == 0 && fixedpoint_is_neg(right) == 1) || (fixedpoi
 
   //frac_sum = max.f - min.f;
   whole_sum = max.w - min.w;
-  printf("max: %x, min: %x, value after sub: %x", max.w, min.w, whole_sum);
 
   if (max.f < min.f) {
     whole_sum = whole_sum - 1;

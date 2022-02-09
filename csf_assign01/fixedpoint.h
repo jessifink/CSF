@@ -11,6 +11,40 @@ typedef struct {
   
 } Fixedpoint;
 
+// Compares the absolute values of two fixed points.
+//
+// Parameters:
+//   left - a valid Fixedpoint value
+//   right - a valid Fixedpoint value
+//
+// Returns:
+//   1 if left larger than right, 0 if equal, -1 if left smaller than right
+int compare_abs_value(Fixedpoint left, Fixedpoint right );
+
+// Carries the fraction when adding subtraction or multiplying. 
+//
+// Parameters: 
+//     l - valid uint 
+//     r - valid uint 
+//
+// Returns: 
+//     1 if need to carry fraction, 0 if no fraction part to carry 
+int carry_frac(uint64_t l, uint64_t r);
+
+
+// Checks if there is overflow when adding, subtracting or multiplying. 
+//
+// Parameters: 
+//     val1 - valid uint 
+//     val2 - valid uint 
+//     orig - valid uint 
+
+//
+// Returns: 
+//     1 if val1 or val2 is smaller orig indicating overflow, 0 if no overflow
+int check_overflow(uint64_t val1, uint64_t val2, uint64_t orig);
+
+
 // Create a Fixedpoint value representing an integer.
 //
 // Parameters:

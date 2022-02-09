@@ -32,6 +32,8 @@ void test_sub(TestObjs *objs);
 void test_is_overflow_pos(TestObjs *objs);
 void test_is_err(TestObjs *objs);
 void test_is_zero(TestObjs *objs);
+void test_halve(TestObjs *objs);
+void test_double(TestObjs *objs);
 // TODO: add more test functions
 
 int main(int argc, char **argv) {
@@ -54,6 +56,8 @@ int main(int argc, char **argv) {
   TEST(test_is_overflow_pos);
   TEST(test_is_err);
   TEST(test_is_zero);
+  TEST(test_halve);
+  TEST(test_double);
 
   // IMPORTANT: if you add additional test functions (which you should!),
   // make sure they are included here.  E.g., if you add a test function
@@ -85,6 +89,32 @@ TestObjs *setup(void) {
 
 void cleanup(TestObjs *objs) {
   free(objs);
+}
+
+void test_halve(TestObjs *objs) {
+  Fixedpoint one_halved = fixedpoint_halve(objs->one);
+  ASSERT(0x8000000000000000UL == fixedpoint_frac_part(one_halved));
+  ASSERT(0UL == fixedpoint_whole_part(one_halved));
+  
+  Fixedpoint one_half_halved = fixedpoint_halve(objs->one_half);
+  ASSERT(0x4000000000000000UL == fixedpoint_frac_part(one_half_halved));
+  ASSERT(0UL == fixedpoint_whole_part(one_half_halved));
+}
+void test_double(TestObjs *objs) {
+  Fixedpoint one_doubled = fixedpoint_double(objs->one);
+  ASSERT(2UL == fixedpoint_whole_part(one_doubled));
+  ASSERT(0UL == fixedpoint_frac_part(one_doubled));
+
+  Fixedpoint neg_one_doubled = fixedpoint_double(objs->one);
+  fixedpoint_negate(neg_one_doubled);
+  ASSERT(2UL == fixedpoint_whole_part(neg_one_doubled));
+  ASSERT(0UL == fixedpoint_frac_part(neg_one_doubled));
+  ASSERT(fixedpoint_is_neg(neg_one_doubled));
+
+  Fixedpoint one_fourth_doubled = fixedpoint_double(objs->one_fourth);
+  ASSERT(0UL == fixedpoint_whole_part(one_fourth_doubled));
+  ASSERT(0x8000000000000000UL == fixedpoint_frac_part(one_fourth_doubled));
+
 }
 
 void test_whole_part(TestObjs *objs) {
