@@ -98,6 +98,25 @@ int compare_abs_value(Fixedpoint left, Fixedpoint right ) {
   if (left.w > right.w) {
     return 1;
   }
+
+  if (left.w < right.w) {
+    return -1;
+  }
+
+  if (left.w == right.w) {
+    if (left.f < right.f) {
+      return -1;
+    } else if (left.f > right.f) {
+      return 1;
+    } else if (left.f == right.f) {
+      return 0;
+    }
+  }
+
+  
+  /*if (left.w > right.w) {
+    return 1;
+  }
   else if (left.w < right.w) {
     return -1;
   } else {
@@ -108,14 +127,23 @@ int compare_abs_value(Fixedpoint left, Fixedpoint right ) {
         } else {
         return 0;
       }
-    }
+    }*/
+
   }
+
 
 int carry_frac(uint64_t l, uint64_t r){
   uint64_t sum = l + r;
   if (sum < l || sum < r) {
     return 1;
   } 
+  return 0;
+}
+
+int check_overflow(uint64_t val1, uint64_t val2, uint64_t orig) {
+  if (val1 < orig || val2 < orig) {
+    return 1;
+  }
   return 0;
 }
 
@@ -136,7 +164,7 @@ Fixedpoint fixedpoint_add(Fixedpoint left, Fixedpoint right) {
 //sign is same: two positive
 //add magnituude of whole parts & check for overflow
 //add fractional parts & check fraction for overflow
-//if fraction has overflow, add 1 for overflow, and check whole for overflow
+//if fraction has overflow, add 1 for overflow, and check whole for overflow! important edge case
 
 //opposite sign
 //compare magnitudes -- subtract smaller from the bigger regardless of sign
@@ -147,6 +175,74 @@ Fixedpoint fixedpoint_add(Fixedpoint left, Fixedpoint right) {
 
 //add magnitudes, check for overflow
 //sign is different
+
+//same sign
+if ((fixedpoint_is_neg(left) == 0 && fixedpoint_is_neg(right) == 0) ||  (fixedpoint_is_neg(left) == 1 && fixedpoint_is_neg(right) == 1)) {
+  whole_sum = left.w + right.w;
+  //check for overflow
+  if (check_overflow(left.w, right.w, whole_sum) == 1) {
+    if (left.t == valid_positive) {
+      sum.t = overflow_pos;
+    } else {
+      sum.t = overflow_neg;
+    }
+  }
+  frac_sum = left.f + right.f;
+  if (check_overflow(left.f, right.f, frac_sum) == 1) {
+    whole_sum = whole_sum + 1;
+    if (left.t == valid_negative) {
+      sum.t = overflow_neg;
+    } else {
+      sum.t = overflow_pos;
+    }
+
+    //check for overflow after incrementing whole_sum
+    if (whole_sum < left.w || whole_sum < right.w) {
+      if (left.t == valid_negative) {
+        sum.t = overflow_neg;
+      } else {
+        sum.t = overflow_pos;
+      }
+    }
+  }
+  sum.w = whole_sum;
+  sum.f = frac_sum;
+  sum.t = left.t;
+  return sum;
+}
+
+//opposite signs
+if ((fixedpoint_is_neg(left) == 0 && fixedpoint_is_neg(right) == 1) || (fixedpoint_is_neg(left) == 1 && fixedpoint_is_neg(right) == 0)) {
+  int res = compare_abs_value(left, right);
+  
+  Fixedpoint max;
+  Fixedpoint min;
+  if (res == 1) {
+    max = left;
+    min = right;
+  } else {
+    max = right;
+    min = left;
+  }
+
+  whole_sum = max.w - min.w;
+  
+  if (max.f < min.f) {
+    max.w--;
+  }
+  frac_sum = max.f - min.f;
+
+  //result takes sign of bigger magnitude
+  sum.t = max.t;
+  sum.w = whole_sum;
+  sum.f = frac_sum;
+  return sum;
+}
+}
+
+
+  /*
+
   if (fixedpoint_is_neg(left) == 0 && fixedpoint_is_neg(right) == 0) {
     whole_sum = left.w + right.w;
     frac_sum = left.f + right.f;
@@ -194,7 +290,9 @@ Fixedpoint fixedpoint_add(Fixedpoint left, Fixedpoint right) {
   sum.w = whole_sum;
   sum.f = frac_sum;
   return sum;
-  }
+
+  
+  }*/
 
 
   /*
