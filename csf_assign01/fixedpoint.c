@@ -32,7 +32,6 @@ Fixedpoint fixedpoint_create_from_hex(const char *hex) {
   int index = 0;
   fp.t = valid_positive;
   if (hex[0] == '-') {
-    printf("%s", "heyo");
     fp.t = valid_negative;
     index++;
   }
@@ -223,8 +222,9 @@ if ((fixedpoint_is_neg(left) == 0 && fixedpoint_is_neg(right) == 0) ||  (fixedpo
       }
     }
   }
-  sum.w = whole_sum;
-  sum.f = frac_sum;
+  printf("%ul", whole_sum);
+  printf("%ul", frac_sum);
+  sum = fixedpoint_create2(whole_sum,frac_sum);
   sum.t = left.t;
   return sum;
 }
@@ -359,10 +359,9 @@ Fixedpoint fixedpoint_sub(Fixedpoint left, Fixedpoint right) {
   Fixedpoint fp;
   uint64_t whole_sum;
   uint64_t frac_sum;
-  
-  /*if (fixedpoint_is_neg(right)) {
+  if (fixedpoint_is_neg(right)) {
     right.t = valid_positive;
-  }*/
+  }
   fp = fixedpoint_add(left, fixedpoint_negate(right));
   return fp;
 
@@ -403,33 +402,46 @@ Fixedpoint fixedpoint_sub(Fixedpoint left, Fixedpoint right) {
 
 Fixedpoint fixedpoint_negate(Fixedpoint val) {
   if (!fixedpoint_is_zero(val)) {
-    if (val.t == valid_negative) {
+    if (val.t == valid_positive) {
+    val.t = valid_negative;
+    } else {
       val.t = valid_positive;
-    } else if (val.t == valid_positive) {
-      val.t = valid_negative;
     }
   }
   return val;
 }
  
 Fixedpoint fixedpoint_halve(Fixedpoint val) {
-    if ((val.f & 1) == 1) {
-    if (val.t == valid_positive) { 
+    uint64_t whole_h;
+    uint64_t frac_h;
+    if (val.f & 1) {
+    if (fixedpoint_is_neg(val)) { 
       val.t  = underflow_neg;
-      return val;
     } else {
       val.t = underflow_pos;
-      return val;
     }
   }
-  val.w = val.w >> 1;
-  val.f = val.f >> 1;
-  return val;
+  whole_h = val.w >> 1;
+  frac_h = val.f >> 1;
+
+  if (val.w & 1) {
+    frac_h += 1UL << 63;
+  }
+  Fixedpoint fp = fixedpoint_create2(whole_h, frac_h);
+  if (val.t == underflow_pos) {
+    fp.t = underflow_pos;
+  } else if (val.t == underflow_neg) {
+    fp.t =underflow_neg;
+  } else if (val.t == valid_negative) {
+    fp.t = valid_negative;
+  }
+  return fp;
   //have to check for underflow 
 }
 
 Fixedpoint fixedpoint_double(Fixedpoint val) {
-  return fixedpoint_add(val,val);
+  Fixedpoint fp = fixedpoint_add(val, val);
+  return fp;
   // uint64_t orig_w = val.w;
   // uint64_t orig_f = val.f;
 
