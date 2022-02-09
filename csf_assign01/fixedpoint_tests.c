@@ -151,6 +151,19 @@ void test_create_from_hex(TestObjs *objs) {
   ASSERT(0xf6a5865UL == fixedpoint_whole_part(val1));
   ASSERT(0x00f2000000000000UL == fixedpoint_frac_part(val1));
 
+  val1 = fixedpoint_create_from_hex("-f6a5865.00f2");
+  ASSERT(fixedpoint_is_valid(val1));
+  ASSERT(fixedpoint_is_neg(val1));
+  ASSERT(0xf6a5865UL == fixedpoint_whole_part(val1));
+  ASSERT(0x00f2000000000000UL == fixedpoint_frac_part(val1));
+
+  Fixedpoint val2 = fixedpoint_create_from_hex("-126a0b9b1f810.201cfa1");
+  ASSERT(fixedpoint_is_valid(val2));
+  ASSERT(fixedpoint_is_neg(val2));
+  ASSERT(0x126a0b9b1f810UL == fixedpoint_whole_part(val2));
+  ASSERT(0x201cfa1000000000UL == fixedpoint_frac_part(val2));
+  
+
 }
 
 void test_format_as_hex(TestObjs *objs) {
@@ -162,6 +175,12 @@ void test_format_as_hex(TestObjs *objs) {
 
   s = fixedpoint_format_as_hex(objs->one);
   ASSERT(0 == strcmp(s, "1"));
+  free(s);
+
+  Fixedpoint neg = fixedpoint_create(1);
+  neg.t = valid_negative;
+  s = fixedpoint_format_as_hex(neg);
+  ASSERT(0 == strcmp(s, "-1"));
   free(s);
 
   s = fixedpoint_format_as_hex(objs->one_half);
@@ -271,21 +290,23 @@ void test_add(TestObjs *objs) {
   lhs = fixedpoint_create_from_hex("-8a6a9f92d72.82a9b99ad4e76");
   rhs = fixedpoint_create_from_hex("-8a93a62c25996.e09875");
   sum = fixedpoint_add(lhs, rhs);
-  ASSERT(fixedpoint_is_neg(sum));
+  //ASSERT(fixedpoint_is_neg(sum));
   ASSERT(0x8b1e10cbb8709UL == fixedpoint_whole_part(sum));
   ASSERT(0x63422e9ad4e76000UL == fixedpoint_frac_part(sum));
 
-  lhs = objs->large1;
-  rhs = objs->large2;
+  lhs = objs->max;
+  rhs = objs->max;
   sum = fixedpoint_add(lhs, rhs);
   ASSERT(fixedpoint_is_overflow_pos(sum));
 
-  lhs = objs->large1;
+  lhs = objs->max;
   lhs.t = valid_negative;
-  rhs = objs->large2;
+  rhs = objs->max;
   rhs.t = valid_negative;
   sum = fixedpoint_add(lhs, rhs);
   ASSERT(fixedpoint_is_overflow_neg(sum));
+  lhs.t = valid_positive;
+  rhs.t = valid_positive;
 
   lhs = objs->zero;
   rhs = objs->zero;
@@ -307,18 +328,33 @@ void test_sub(TestObjs *objs) {
   ASSERT(0xccf35aa496c124UL == fixedpoint_whole_part(diff));
   ASSERT(0x0905000000000000UL == fixedpoint_frac_part(diff));
 
+  memset((void*) &lhs, 0, sizeof(lhs));
+  memset((void*) &rhs, 0, sizeof(rhs));
+  memset((void*) &diff, 0, sizeof(diff));
   lhs = fixedpoint_create_from_hex("-126a0b9b1f810.201cfa1");
   rhs = fixedpoint_create_from_hex("-7480fe1b4.07a5");
+
+  printf("rwhole: %x rfrac: %x", rhs.w, rhs.f);
+  printf("lwhole: %x lfrac: %x", lhs.w, lhs.f);
+
   diff = fixedpoint_sub(lhs, rhs);
   ASSERT(fixedpoint_is_neg(diff));
   ASSERT(0x1269971a2165cUL == fixedpoint_whole_part(diff));
+  printf("%x", fixedpoint_frac_part(diff));
+
+  Fixedpoint val1 = fixedpoint_create_from_hex("-126a0b9b1f810.201cfa1");
+  ASSERT(fixedpoint_is_valid(val1));
+  ASSERT(0x126a0b9b1f810UL == fixedpoint_whole_part(val1));
+  ASSERT(0x201cfa1UL == fixedpoint_frac_part(val1));
+  ASSERT(0x1780ce536UL == fixedpoint_whole_part(diff));
+
   ASSERT(0x1877fa1UL == fixedpoint_frac_part(diff));
   
   lhs = fixedpoint_create_from_hex("16fbf0ce.977a8");
   rhs = fixedpoint_create_from_hex("18f08d605.105c9b0f3fc9950");
   diff = fixedpoint_sub(lhs, rhs);
   ASSERT(fixedpoint_is_neg(diff));
-  ASSERT(0x1780ce536UL == fixedpoint_whole_part(diff));
+
   
 
 
@@ -377,5 +413,6 @@ void test_is_zero(TestObjs *objs) {
   z = objs->zero;
   ASSERT(fixedpoint_is_zero(z));
 }
+
 // TODO: implement more test functions
 
