@@ -120,52 +120,48 @@ uint64_t fixedpoint_frac_part(Fixedpoint val) {
   return val.f;
 }
 
+/*
+Function to compare magnitudes of fixedpoint values
+Parameters:
+  left - left hand value to be compared
+  right - right hand value to be compared
+Returns:
+  1 if left > right
+  -1 if left < right
+  0 if left = right
+  */
 int compare_abs_value(Fixedpoint left, Fixedpoint right ) {
+  int r; 
   if (left.w > right.w) {
-    return 1;
+    r = 1;
   }
 
   if (left.w < right.w) {
-    return -1;
+    r = -1;
   }
 
   if (left.w == right.w) {
     if (left.f < right.f) {
-      return -1;
+      r = -1;
     } else if (left.f > right.f) {
-      return 1;
+      r = 1;
     } else if (left.f == right.f) {
-      return 0;
+      r = 0;
     }
   }
-
-  
-  /*if (left.w > right.w) {
-    return 1;
-  }
-  else if (left.w < right.w) {
-    return -1;
-  } else {
-      if (left.f < right.f) {
-        return -1;
-      } else if (left.f > right.w) {
-          return 1;
-        } else {
-        return 0;
-      }
-    }*/
-
+  return r;
   }
 
 
-int carry_frac(uint64_t l, uint64_t r){
-  uint64_t sum = l + r;
-  if (sum < l || sum < r) {
-    return 1;
-  } 
-  return 0;
-}
-
+/*Function to check for overflow between values & original
+Parameters:
+  val1 - first value
+  val2 - second value
+  orig - value being compared/checked for incidence of overflow
+Returns
+  1 if parameter values are indicative of overflow
+  0 if not
+  */
 int check_overflow(uint64_t val1, uint64_t val2, uint64_t orig) {
   if (orig < val1 || orig < val2) {
     return 1;
@@ -173,50 +169,19 @@ int check_overflow(uint64_t val1, uint64_t val2, uint64_t orig) {
   return 0;
 }
 
-
-Fixedpoint fixedpoint_add(Fixedpoint left, Fixedpoint right) {
+Fixedpoint add_same_sign(Fixedpoint left, Fixedpoint right) {
   Fixedpoint sum;
-  uint64_t whole_sum;
-  uint64_t frac_sum;
-  // + + - ----
-  // + + + ----
-  // - + -   ---
-  // - + + ---  // - - - 
-  // + - + 
-  // - - + 
-  // + - - 
-
-
-//sign is same: two positive
-//add magnituude of whole parts & check for overflow
-//add fractional parts & check fraction for overflow
-//if fraction has overflow, add 1 for overflow, and check whole for overflow! important edge case
-
-//opposite sign
-//compare magnitudes -- subtract smaller from the bigger regardless of sign
-//find magnitude difference
-//to carry, check if left is less than the right frac value. If so, subtract
-//1 from left, then just subtract magnitude. 
-//sign for result: result takes sign of bigger magnitude
-
-//add magnitudes, check for overflow
-//sign is different
-
-//same sign
-if ((fixedpoint_is_neg(left) == 0 && fixedpoint_is_neg(right) == 0) ||  (fixedpoint_is_neg(left) == 1 && fixedpoint_is_neg(right) == 1)) {
-  whole_sum = left.w + right.w;
-  if (left.t == valid_negative) {
-    sum.t = valid_negative;
-  } else {
-    sum.t = valid_positive;
-  }
-
+  uint64_t whole_sum = left.w + right.w;
+    if (left.t == valid_negative) {
+      sum.t = valid_negative;
+    } else {
+      sum.t = valid_positive;
+    }
   sum.w = whole_sum;
   
   //check for overflow
   if (check_overflow(left.w, right.w, whole_sum) == 1) {
       if (left.t == valid_positive) {
-      printf("%s", "hello");
       sum.t = overflow_pos;
       return sum;
     } else if (left.t == valid_negative) {
@@ -224,23 +189,12 @@ if ((fixedpoint_is_neg(left) == 0 && fixedpoint_is_neg(right) == 0) ||  (fixedpo
       return sum;
     }
   }
-  frac_sum = left.f + right.f;
+  uint64_t frac_sum = left.f + right.f;
   sum.f = frac_sum;
   if (check_overflow(left.f, right.f, frac_sum) == 1) {
     whole_sum++;
     sum.w = whole_sum;
-    //printf("ENTERED LINE 212 CARRY FRAC");
-    /*if (left.t == valid_negative) {
-      //printf("ENTERED LINE 216 FRAC OVERFLOW neg. frac part is: %x", sum.f);
-      sum.t = overflow_neg;
-      return sum;
-      printf("%s", "pear");
-    } else {
-      sum.t = overflow_pos;
-      return sum;
-      printf("%s", "mango");
-    }*/
-
+  
     //check for overflow after incrementing whole_sum
     if (whole_sum < left.w || whole_sum < right.w) {
       if (left.t == valid_negative) {
@@ -252,220 +206,79 @@ if ((fixedpoint_is_neg(left) == 0 && fixedpoint_is_neg(right) == 0) ||  (fixedpo
       }
     }
   }
-  //printf("%ul", whole_sum);
-  //printf("%ul", frac_sum);
-  //sum = fixedpoint_create2(whole_sum,frac_sum);
   sum.w = whole_sum;
   sum.f = frac_sum;
-  //sum.t = left.t;
   return sum;
-}
-
-//opposite signs
-if ((fixedpoint_is_neg(left) == 0 && fixedpoint_is_neg(right) == 1) || (fixedpoint_is_neg(left) == 1 && fixedpoint_is_neg(right) == 0)) {
-  printf("%x %x", left.f, right.f);
-
   
-  whole_sum = 0;
+} 
+
+Fixedpoint add_opposite_sign(Fixedpoint left, Fixedpoint right) {
+  uint64_t whole_sum = 0;
   int res = compare_abs_value(left, right);
   
   Fixedpoint max;
   Fixedpoint min;
+  Fixedpoint sum;
 
-  uint64_t whole_diff;
-  uint64_t frac_diff;
-
+  //if magnitude of left is greater than right
   if (res == 1) {
-    printf("257 this happened");
-    //memcpy((void*) max, (void*) left, sizeof(left));
-    //memcpy((void*) min, (void*) right, sizeof(right));
-   
-  max.w = left.w;
-  max.f = left.f;
-  max.t = left.t;
-  min.w = right.w;
-  min.f = right.f;
-  min.t = left.t;
+    max.w = left.w;
+    max.f = left.f;
+    max.t = left.t;
 
-  printf("%x %x", max.f, min.f);
-    //whole_diff == left.w-right.w;
-    //frac_diff = left.f-right.f;
-  } else if (res == -1) {
+    min.w = right.w;
+    min.f = right.f;
+    min.t = left.t;
+
+  } else if (res == -1) { //magnitude left less than right
     max = right;
     min = left;
-    //whole_diff = right.w - left.w;
-    //frac_diff = right.f - left.f;
-  } else if (res == 0) {
+
+  } else if (res == 0) { //equal in magnitude
     sum.w = 0;
     sum.f = 0;
     sum.t = valid_positive;
     return sum;
   }
 
-  //frac_sum = max.f - min.f;
-  whole_sum = max.w - min.w;
+  whole_sum = max.w - min.w; //compute magnitude difference
 
-  if (max.f < min.f) {
+  if (max.f < min.f) { //carry over in subtraction
     whole_sum = whole_sum - 1;
-    //printf("279 this happened");
   }
   
-  frac_sum = max.f - min.f;
-  printf("%x", max.f);
-  printf("%x", min.f);
-  
+  uint64_t frac_sum = max.f - min.f;
+
   //result takes sign of bigger magnitude
   sum.t = max.t;
   sum.w = whole_sum;
   sum.f = frac_sum;
   return sum;
-}
-
-}
-
-
-  /*
-
-  if (fixedpoint_is_neg(left) == 0 && fixedpoint_is_neg(right) == 0) {
-    whole_sum = left.w + right.w;
-    frac_sum = left.f + right.f;
-    whole_sum += carry_frac(left.f, right.f);
-    if (whole_sum < left.w || whole_sum < right.w) {
-      sum.t = overflow_pos;
-    }
-  }
-
-  if (fixedpoint_is_neg(left) == 1 && fixedpoint_is_neg(right) == 1) {
-    whole_sum = left.w + right.w;
-    frac_sum = left.f + right.f;
-    whole_sum += carry_frac(left.f, right.f);
-    if (whole_sum < left.w || whole_sum < right.w) {
-      sum.t = overflow_neg;
-    }
-    sum = fixedpoint_negate(sum);
-  }
-
-  if (fixedpoint_is_neg(left) == 0 && fixedpoint_is_neg(right) == 1) {
-    if (compare_abs_value(left, right) == 1) {
-      whole_sum = left.w - right.w;
-      frac_sum = left.f - right.f;
-      whole_sum += carry_frac(left.f, right.f);
-    } else if (compare_abs_value(left, right) == -1) {
-      whole_sum = right.w - left.w;
-      frac_sum = right.f - left.f;
-      whole_sum += carry_frac(left.f, right.f);
-      sum = fixedpoint_negate(sum);
-    }
-  }
-
-    if (fixedpoint_is_neg(left) == 1 && fixedpoint_is_neg(right) == 0) {
-    if (compare_abs_value(left, right) == 1) {
-      whole_sum = right.w - left.w;
-      frac_sum = right.w - left.w;
-      whole_sum += carry_frac(left.f, right.f);
-      sum = fixedpoint_negate(sum);
-    } else if (compare_abs_value(left, right) == -1) {
-      whole_sum = right.w - left.w;
-      frac_sum = right.f - left.f;
-      whole_sum += carry_frac(left.f, right.f);
-    }
-  }
-  sum.w = whole_sum;
-  sum.f = frac_sum;
-  return sum;
-
   
-  }*/
+}
 
 
-  /*
-  if (fixedpoint_is_neg(left) == 1 && fixedpoint_is_neg(right) == 1 ) {
-    whole_sum = left.w + right.w;
-    frac_sum = left.f + right.f;
-    sum = fixedpoint_create2(whole_sum, frac_sum);
-    fixedpoint_negate(sum);
-  } else if (fixedpoint_is_neg(left) == 1 && fixedpoint_is_neg(right) == 0 && compare_abs_value(left,right) == 1) {
-    whole_sum = left.w - right.w;
-    frac_sum = left.f - right.f;
-    sum = fixedpoint_create2(whole_sum, frac_sum);
-    fixedpoint_negate(sum);
-  } else if (fixedpoint_is_neg(left) == 0 && fixedpoint_is_neg(right) == 1 && compare_abs_value(left,right) == 1) {
-    whole_sum = left.w - right.w;
-    frac_sum = left.f - right.f;
-    sum = fixedpoint_create2(whole_sum, frac_sum);
-  } else if (fixedpoint_is_neg(left) == 0 && fixedpoint_is_neg(right) == 0){
-    whole_sum = left.w + right.w;
-    frac_sum = left.f + right.f;
-    sum = fixedpoint_create2(whole_sum, frac_sum);
-  } else {
-    fixedpoint_sub(left,right);
+
+Fixedpoint fixedpoint_add(Fixedpoint left, Fixedpoint right) {
+  Fixedpoint sum;
+
+  //same sign
+  if ((fixedpoint_is_neg(left) == 0 && fixedpoint_is_neg(right) == 0) ||  (fixedpoint_is_neg(left) == 1 && fixedpoint_is_neg(right) == 1)) {
+    sum = add_same_sign(left, right);
   }
-  if (whole_sum < left.w || whole_sum < right.w) {
-    if (left.t == valid_negative && right.t == valid_negative) {
-      sum.t = overflow_neg;
-    } else {
-        sum.t = overflow_pos;
-      }
-    }
-  if (frac_sum < left.f || frac_sum < right.f) {
-    sum.w++;
-    if (left.t == valid_negative && right.t == valid_negative) {
-      sum.t = overflow_neg;
-    } else {
-        sum.t = overflow_pos;
-      }
-  }
+
+  //opposite signs
+  if ((fixedpoint_is_neg(left) == 0 && fixedpoint_is_neg(right) == 1) || (fixedpoint_is_neg(left) == 1 && fixedpoint_is_neg(right) == 0)) {
+    sum = add_opposite_sign(left, right);
+  } 
+
   return sum;
-  */
-//}
-
+}
 
 Fixedpoint fixedpoint_sub(Fixedpoint left, Fixedpoint right) {
-  Fixedpoint fp;
-  uint64_t whole_sum;
-  uint64_t frac_sum;
-  
-  /*if (fixedpoint_is_neg(right)) {
-    right.t = valid_positive;
-  }*/
-
-  printf("rw: %x rf %x", right.w, right.f);
-  fp = fixedpoint_add(left, fixedpoint_negate(right));
+  Fixedpoint fp = fixedpoint_add(left, fixedpoint_negate(right));
   return fp;
-
-  // - - - 
-  // + - + --
-  // - - + -- 
-  // + - - --
-
-  /*
-  if (!(fixedpoint_is_neg(left) == 0 && fixedpoint_is_neg(right))) {
-    whole_sum = left.w - right.w;
-    frac_sum = left.f - right.f;
-    fp.w = whole_sum;
-    fp.f = frac_sum;
-    } else if (fixedpoint_is_neg(left) == 1 && fixedpoint_is_neg(right) == 0 && compare_abs_value(left,right) == -1) {
-    whole_sum = right.w - left.w;
-    frac_sum = right.f - left.f;
-    fp = fixedpoint_create2(whole_sum, frac_sum);
-  } else if (fixedpoint_is_neg(left) == 0 && fixedpoint_is_neg(right) == 1 && compare_abs_value(left,right) == -1) {
-    whole_sum = right.w - left.w;
-    frac_sum = right.f - left.f;
-    fp = fixedpoint_create2(whole_sum, frac_sum);
-    fixedpoint_negate(fp);
-  } else {
-    whole_sum = left.w - right.w;
-    frac_sum = left.f - right.f;
-    fp = fixedpoint_create2(whole_sum, frac_sum);
-  }
-
-
-  return fp;
-  */
 }
-
-
-
 
 
 Fixedpoint fixedpoint_negate(Fixedpoint val) {
@@ -476,7 +289,6 @@ Fixedpoint fixedpoint_negate(Fixedpoint val) {
       val.t = valid_positive;
     }
   }
-  printf("w: %x f: %x", val.w, val.f);
   return val;
 }
  
@@ -625,15 +437,10 @@ int fixedpoint_is_valid(Fixedpoint val) {
   return 0;
 }
 
-//char *fixedpoint_format_as_hex(Fixedpoint val) {
-
 char *fixedpoint_format_as_hex(Fixedpoint val) {
 
-  char *s = malloc(100);
+  char *s = malloc(100); //to store hex
   strcpy(s, "<invalid>");
-
-  //1. check if negative and add neg sign
-  //if no frac part, copy over data with sprintf. 
 
   int neg = 0;
   if (fixedpoint_is_neg(val) == 1) {
@@ -641,7 +448,7 @@ char *fixedpoint_format_as_hex(Fixedpoint val) {
     
   }
   if (val.f == 0) {
-    if (neg == 1) {
+    if (neg == 1) { //either mark as negative or not
       sprintf(s, "-%lx", val.w);
     } else {
       sprintf(s, "%lx", val.w);
@@ -649,7 +456,7 @@ char *fixedpoint_format_as_hex(Fixedpoint val) {
     return s;
   } else {
     if (neg == 1) {
-      sprintf(s, "-%lx.%016lx", val.w, val.f);
+      sprintf(s, "-%lx.%016lx", val.w, val.f); //copy values into string
     } else {
       sprintf(s, "%lx.%016lx", val.w, val.f);
     }
@@ -659,14 +466,9 @@ char *fixedpoint_format_as_hex(Fixedpoint val) {
 
   //to trim trailing zeroes
   size_t index = strlen(s) - 1;
-  char c = s[index];
   while (s[index] == '0') {
     index--;
   }
   s[++index] = '\0';
-  
-  //to trim trailing zeroes, start at the end of the array.
-  //while loop to step backwards starting from last digit until 0
-  //if it is zero, set it to null character
   return s;
 }
