@@ -82,17 +82,29 @@ Fixedpoint fixedpoint_create_from_hex(const char *hex) {
     frac[f_index] = '\0'; //check length
     frac_p = (uint64_t) (strtoul(frac, NULL, 16));
     f_len = strlen(frac);
+    printf("%ul", f_len);
     frac_p = frac_p << (64 - (f_len * 4));
     //error if string longer than 16 
-    // if (f_len > 16 || frac[16] != '\0') {
-    //   fp.t = err;
-    // }
-  }
+    if (f_len >= 16) {
+      fp.t = err;
+    }
+    }
+  //   // if (f_len == 16 && frac[15] != '\0') {
+  //   //   fp.t = err;
+  //   //       printf("%s", "lemon");
+
+  //   // }
+  // }
   size_t w_len = strlen(whole);
   //error if string longer than 16 
-  // if (w_len > 16 || whole[16] != '\0') {
-  //     fp.t = err;
-  //   }
+  if (w_len >= 16) {
+    fp.t = err;
+  }
+  // if (w_len == 16 && whole[15] != '\0') {
+  //       printf("%s", "pear");
+
+  //   fp.t = err;
+ // }
 
   fp.w = whole_p;
   fp.f = frac_p;
