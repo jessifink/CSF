@@ -292,6 +292,7 @@ if ((fixedpoint_is_neg(left) == 0 && fixedpoint_is_neg(right) == 1) || (fixedpoi
 
   //frac_sum = max.f - min.f;
   whole_sum = max.w - min.w;
+  printf("max: %x, min: %x, value after sub: %x", max.w, min.w, whole_sum);
 
   if (max.f < min.f) {
     whole_sum = whole_sum - 1;
