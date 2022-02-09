@@ -32,7 +32,7 @@ Fixedpoint fixedpoint_create_from_hex(const char *hex) {
   int index = 0;
   fp.t = valid_positive;
   if (hex[0] == '-') {
-    printf("%s", "hello");
+    printf("%s", "heyo");
     fp.t = valid_negative;
     index++;
   }
@@ -49,8 +49,8 @@ Fixedpoint fixedpoint_create_from_hex(const char *hex) {
     c = hex[++index];
   } 
   whole[w_index] = '\0'; //check length
-  printf("whole : %s \n", whole);
   uint64_t whole_p = (uint64_t) (strtoul(whole, NULL, 16));
+  //printf("whole : %s \n", whole);
   index++;
   c = hex[index];
   int f_index = 0;
@@ -67,14 +67,17 @@ Fixedpoint fixedpoint_create_from_hex(const char *hex) {
       f_index++;
       c = hex[++index];
     }
-  frac[f_index] = '\0'; //check length
-  //printf("frac : %s \n", frac);
-  frac_p = (uint64_t) (strtoul(frac, NULL, 16));
-  f_len = strlen(frac);
-  frac_p = frac_p << (64 - (f_len * 4));
+    frac[f_index] = '\0'; //check length
+    //printf("frac : %s \n", frac);
+    frac_p = (uint64_t) (strtoul(frac, NULL, 16));
+    f_len = strlen(frac);
+    frac_p = frac_p << (64 - (f_len * 4));
+    if (f_len >= 16) {
+      fp.t = err;
+  }
   }
   size_t w_len = strlen(whole);
-  if (sizeof(w_len) > 16 || sizeof(f_len) > 16) {
+  if (w_len >= 16 ) {
     fp.t = err;
     //return a Fixedpoint value for which a fixedpoint_is_err returns true
   } 
@@ -83,8 +86,6 @@ Fixedpoint fixedpoint_create_from_hex(const char *hex) {
   //strchr checks a given string for first ocurrence of a char. contains
   fp.w = whole_p;
   fp.f = frac_p;
-  printf("%d",fp.t);
-
   // if (frac_p == '\0') {
   //   return fp;
   //   //return fixedpoint_create(fp.w); 
@@ -189,9 +190,13 @@ if ((fixedpoint_is_neg(left) == 0 && fixedpoint_is_neg(right) == 0) ||  (fixedpo
   //check for overflow
   if (check_overflow(left.w, right.w, whole_sum) == 1) {
     if (left.t == valid_positive) {
+      printf("%s", "hello");
       sum.t = overflow_pos;
+      return sum;
     } else if (left.t == valid_negative) {
+      printf("%s", "jessi");
       sum.t = overflow_neg;
+      return sum;
     }
   }
   frac_sum = left.f + right.f;
@@ -199,16 +204,22 @@ if ((fixedpoint_is_neg(left) == 0 && fixedpoint_is_neg(right) == 0) ||  (fixedpo
     whole_sum = whole_sum + 1;
     if (left.t == valid_negative) {
       sum.t = overflow_neg;
+      return sum;
+      printf("%s", "pear");
     } else {
       sum.t = overflow_pos;
+      return sum;
+      printf("%s", "mango");
     }
 
     //check for overflow after incrementing whole_sum
     if (whole_sum < left.w || whole_sum < right.w) {
       if (left.t == valid_negative) {
         sum.t = overflow_neg;
+        return sum;
       } else {
         sum.t = overflow_pos;
+        return sum;
       }
     }
   }
@@ -348,7 +359,9 @@ Fixedpoint fixedpoint_sub(Fixedpoint left, Fixedpoint right) {
   Fixedpoint fp;
   uint64_t whole_sum;
   uint64_t frac_sum;
-
+  if (fixedpoint_is_neg(right)) {
+    right.t = valid_positive;
+  }
   fp = fixedpoint_add(left, fixedpoint_negate(right));
   return fp;
 
@@ -398,8 +411,10 @@ Fixedpoint fixedpoint_halve(Fixedpoint val) {
     if ((val.f & 1) == 1) {
     if (val.t == valid_positive) { 
       val.t  = underflow_neg;
+      return val;
     } else {
       val.t = underflow_pos;
+      return val;
     }
   }
   val.w = val.w >> 1;
@@ -409,21 +424,21 @@ Fixedpoint fixedpoint_halve(Fixedpoint val) {
 }
 
 Fixedpoint fixedpoint_double(Fixedpoint val) {
-  
-  uint64_t orig_w = val.w;
-  uint64_t orig_f = val.f;
+  return fixedpoint_add(val,val);
+  // uint64_t orig_w = val.w;
+  // uint64_t orig_f = val.f;
 
-  if (val.w > UINT64_MAX) {
-    if (val.t == valid_negative) {
-      val.t = overflow_neg;
-    } else {
-      val.t = overflow_pos;
-    }
-  }
-  val.w = val.w << 1;
-  val.f = val.f << 1;
+  // if (val.w > UINT64_MAX) {
+  //   if (val.t == valid_negative) {
+  //     val.t = overflow_neg;
+  //   } else {
+  //     val.t = overflow_pos;
+  //   }
+  // }
+  // val.w = val.w << 1;
+  // val.f = val.f << 1;
 
-  return val;
+  // return val;
 }
 
 int fixedpoint_compare(Fixedpoint left, Fixedpoint right) {
