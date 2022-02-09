@@ -359,9 +359,10 @@ Fixedpoint fixedpoint_sub(Fixedpoint left, Fixedpoint right) {
   Fixedpoint fp;
   uint64_t whole_sum;
   uint64_t frac_sum;
-  if (fixedpoint_is_neg(right)) {
+  
+  /*if (fixedpoint_is_neg(right)) {
     right.t = valid_positive;
-  }
+  }*/
   fp = fixedpoint_add(left, fixedpoint_negate(right));
   return fp;
 
@@ -402,7 +403,11 @@ Fixedpoint fixedpoint_sub(Fixedpoint left, Fixedpoint right) {
 
 Fixedpoint fixedpoint_negate(Fixedpoint val) {
   if (!fixedpoint_is_zero(val)) {
-    val.t = valid_negative;
+    if (val.t == valid_negative) {
+      val.t = valid_positive;
+    } else if (val.t == valid_positive) {
+      val.t = valid_negative;
+    }
   }
   return val;
 }
@@ -539,6 +544,8 @@ int fixedpoint_is_valid(Fixedpoint val) {
   return 0;
 }
 
+//char *fixedpoint_format_as_hex(Fixedpoint val) {
+
 char *fixedpoint_format_as_hex(Fixedpoint val) {
 
   char *s = malloc(100);
@@ -547,23 +554,35 @@ char *fixedpoint_format_as_hex(Fixedpoint val) {
   //1. check if negative and add neg sign
   //if no frac part, copy over data with sprintf. 
 
+  int neg = 0;
   if (fixedpoint_is_neg(val) == 1) {
-    s[0] = '-';
+    neg = 1;
+    
   }
   if (val.f == 0) {
-    sprintf(s, "%lx", val.w);
+    if (neg == 1) {
+      sprintf(s, "-%lx", val.w);
+    } else {
+      sprintf(s, "%lx", val.w);
+    }
     return s;
   } else {
-    sprintf(s, "%lx.%016lx", val.w, val.f);
+    if (neg == 1) {
+      sprintf(s, "-%lx.%016lx", val.w, val.f);
+    } else {
+      sprintf(s, "%lx.%016lx", val.w, val.f);
+    }
+
+    
   }
 
   //to trim trailing zeroes
   size_t index = strlen(s) - 1;
   char c = s[index];
-  while (s == '0') {
+  while (s[index] == '0') {
     index--;
   }
-  s[index] = '\0';
+  s[++index] = '\0';
   
   //to trim trailing zeroes, start at the end of the array.
   //while loop to step backwards starting from last digit until 0
