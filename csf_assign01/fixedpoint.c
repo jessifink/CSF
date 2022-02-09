@@ -107,6 +107,15 @@ int compare_abs_value(Fixedpoint left, Fixedpoint right ) {
     }
   }
 
+int carry_frac(uint64_t l, uint64_t r){
+  uint64_t sum = l + r;
+  if (sum < l || sum < r) {
+    return 1;
+  } 
+  return 0;
+}
+
+
 Fixedpoint fixedpoint_add(Fixedpoint left, Fixedpoint right) {
   Fixedpoint sum;
   uint64_t whole_sum;
@@ -118,6 +127,59 @@ Fixedpoint fixedpoint_add(Fixedpoint left, Fixedpoint right) {
   // + - + 
   // - - + 
   // + - - 
+
+
+  if (fixedpoint_is_neg(left) == 0 && fixedpoint_is_neg(right) == 0) {
+    whole_sum = left.w + right.w;
+    frac_sum = left.f + right.f;
+    whole_sum += carry_frac(left.f, right.f);
+    if (whole_sum < left.w || whole_sum < right.w) {
+      sum.t = overflow_pos;
+    }
+  }
+
+  if (fixedpoint_is_neg(left) == 1 && fixedpoint_is_neg(right) == 1) {
+    whole_sum = left.w + right.w;
+    frac_sum = left.f + right.f;
+    whole_sum += carry_frac(left.f, right.f);
+    if (whole_sum < left.w || whole_sum < right.w) {
+      sum.t = overflow_neg;
+    }
+    sum = fixedpoint_negate(sum);
+  }
+
+  if (fixedpoint_is_neg(left) == 0 && fixedpoint_is_neg(right) == 1) {
+    if (compare_abs_value(left, right) == 1) {
+      whole_sum = left.w - right.w;
+      frac_sum = left.f = right.f;
+      whole_sum += carry_frac(left.f, right.f);
+    } else if (compare_abs_value(left, right) == -1) {
+      whole_sum = right.w - left.w;
+      frac_sum = right.f - left.f;
+      whole_sum += carry_frac(left.f, right.f);
+      sum = fixedpoint_negate(sum);
+    }
+  }
+
+    if (fixedpoint_is_neg(left) == 1 && fixedpoint_is_neg(right) == 0) {
+    if (compare_abs_value(left, right) == 1) {
+      whole_sum = right.w - left.w;
+      frac_sum = right.w - left.w;
+      whole_sum += carry_frac(left.f, right.f);
+      sum = fixedpoint_negate(sum);
+    } else if (compare_abs_value(left, right) == -1) {
+      whole_sum = right.w - left.w;
+      frac_sum = right.f - left.f;
+      whole_sum += carry_frac(left.f, right.f);
+    }
+  }
+  sum.w = whole_sum;
+  sum.f = frac_sum;
+  return sum;
+  }
+
+
+  /*
   if (fixedpoint_is_neg(left) == 1 && fixedpoint_is_neg(right) == 1 ) {
     whole_sum = left.w + right.w;
     frac_sum = left.f + right.f;
@@ -155,7 +217,8 @@ Fixedpoint fixedpoint_add(Fixedpoint left, Fixedpoint right) {
       }
   }
   return sum;
-}
+  */
+//}
 
 
 Fixedpoint fixedpoint_sub(Fixedpoint left, Fixedpoint right) {
@@ -163,10 +226,15 @@ Fixedpoint fixedpoint_sub(Fixedpoint left, Fixedpoint right) {
   uint64_t whole_sum;
   uint64_t frac_sum;
 
+  fp = fixedpoint_add(left, fixedpoint_negate(right));
+  return fp;
+
   // - - - 
   // + - + --
   // - - + -- 
   // + - - --
+
+  /*
   if (!(fixedpoint_is_neg(left) == 0 && fixedpoint_is_neg(right))) {
     whole_sum = left.w - right.w;
     frac_sum = left.f - right.f;
@@ -187,7 +255,9 @@ Fixedpoint fixedpoint_sub(Fixedpoint left, Fixedpoint right) {
     fp = fixedpoint_create2(whole_sum, frac_sum);
   }
 
+
   return fp;
+  */
 }
 
 
@@ -332,8 +402,16 @@ int fixedpoint_is_valid(Fixedpoint val) {
 }
 
 char *fixedpoint_format_as_hex(Fixedpoint val) {
+
   char *s = malloc(20);
   strcpy(s, "<invalid>");
-  //sprintf()
+
+  if (val.f == 0) {
+    sprintf(s, "%x", val.w);
+    return s;
+  } else {
+    sprintf(s, "%x.%x", val.w, val.f);
+  }
+
   return s;
 }
