@@ -26,7 +26,7 @@ Fixedpoint fixedpoint_create2(uint64_t whole, uint64_t frac) {
 
 Fixedpoint fixedpoint_create_from_hex(const char *hex) {
   Fixedpoint fp;
-  size_t len = strlen(hex);
+  size_t len = strlen(hex); //if length is more than 33 too long
   //need to create a fixed point first 
   char sign = hex[0];
   int index = 0;
@@ -39,11 +39,12 @@ Fixedpoint fixedpoint_create_from_hex(const char *hex) {
   char whole[16] = "";
   int w_index = 0;
   while (c != '.' && (index < (int)len)) {
+  
     whole[w_index] = c;
     w_index++;
     c = hex[++index];
   } 
-  whole[w_index] = '\0';
+  whole[w_index] = '\0'; //check length
   printf("whole : %s \n", whole);
   uint64_t whole_p = (uint64_t) (strtoul(whole, NULL, 16));
   index++;
@@ -58,13 +59,16 @@ Fixedpoint fixedpoint_create_from_hex(const char *hex) {
       f_index++;
       c = hex[++index];
     }
-  frac[f_index] = '\0';
+  frac[f_index] = '\0'; //check length
   printf("frac : %s \n", frac);
   frac_p = (uint64_t) (strtoul(frac, NULL, 16));
   f_len = strlen(frac);
   frac_p = frac_p << (64 - (f_len * 4));
   }
   size_t w_len = strlen(whole);
+  //check if whole and fractional are valid hex string with helper function
+  //is each character a number or abcdef (capital and lowercase)
+  //strchr checks a given string for first ocurrence of a char. contains
   fp.w = whole_p;
   fp.f = frac_p;
   if (sizeof(w_len) > 16 || sizeof(f_len) > 16) {
@@ -129,6 +133,20 @@ Fixedpoint fixedpoint_add(Fixedpoint left, Fixedpoint right) {
   // + - - 
 
 
+//sign is same: two positive
+//add magnituude of whole parts & check for overflow
+//add fractional parts & check fraction for overflow
+//if fraction has overflow, add 1 for overflow, and check whole for overflow
+
+//opposite sign
+//compare magnitudes -- subtract smaller from the bigger regardless of sign
+//find magnitude difference
+//to carry, check if left is less than the right frac value. If so, subtract
+//1 from left, then just subtract. 
+//sign for result: result takes sign of bigger magnitude
+
+//add magnitudes, check for overflow
+//sign is different
   if (fixedpoint_is_neg(left) == 0 && fixedpoint_is_neg(right) == 0) {
     whole_sum = left.w + right.w;
     frac_sum = left.f + right.f;
@@ -151,7 +169,7 @@ Fixedpoint fixedpoint_add(Fixedpoint left, Fixedpoint right) {
   if (fixedpoint_is_neg(left) == 0 && fixedpoint_is_neg(right) == 1) {
     if (compare_abs_value(left, right) == 1) {
       whole_sum = left.w - right.w;
-      frac_sum = left.f = right.f;
+      frac_sum = left.f - right.f;
       whole_sum += carry_frac(left.f, right.f);
     } else if (compare_abs_value(left, right) == -1) {
       whole_sum = right.w - left.w;
@@ -403,15 +421,20 @@ int fixedpoint_is_valid(Fixedpoint val) {
 
 char *fixedpoint_format_as_hex(Fixedpoint val) {
 
-  char *s = malloc(20);
+  char *s = malloc(100);
   strcpy(s, "<invalid>");
 
+  //1. check if negative and add neg sign
+  //if no frac part, copy over data with sprintf. 
   if (val.f == 0) {
-    sprintf(s, "%x", val.w);
+    sprintf(s, "%lx", val.w);
     return s;
   } else {
-    sprintf(s, "%x.%x", val.w, val.f);
+    sprintf(s, "%lx.%016lx", val.w, val.f);
   }
 
+  //to trim trailing zeroes, start at the end of the array.
+  //while loop to step backwards starting from last digit until 0
+  //if it is zero, set it to null character
   return s;
 }
